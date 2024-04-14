@@ -585,7 +585,7 @@ void wavfile_init(struct wavfile_header &header) {
 
     header.fmt_length = 16;
     header.audio_format = 1;
-    header.byte_rate = header.sample_rate * (bits_per_sample / 8);
+    header.byte_rate = header.num_channels * header.sample_rate * bits_per_sample / 8;
     header.block_align = header.num_channels * bits_per_sample / 8;
     header.bits_per_sample = bits_per_sample;
 }
