@@ -285,7 +285,7 @@ bool CreateDecoder(const uint8_t *SrcBufferData, uint32_t SrcBufferDataSize,
 
 int Decode(BinkAudioDecoder *&Decoder, const uint8 *CompressedData,
            const int32 CompressedDataSize, uint32_t NumChannels,
-           uint32_t SampleRate, const uint16_t MaxCompSpaceNeeded,
+           uint32_t SampleRate, const uint32_t MaxCompSpaceNeeded,
            uint8 *OutPCMData, const int32 OutputPCMDataSize) {
     auto GetMaxFrameSizeSamples = [SampleRate]() -> uint32_t {
         if (SampleRate >= 44100) {
@@ -315,7 +315,7 @@ int Decode(BinkAudioDecoder *&Decoder, const uint8 *CompressedData,
     // alloca().
     // (+8 for max block header size)
     uint8 *StackBlockBuffer =
-            (uint8 *) alloca(MaxCompSpaceNeeded + BINK_UE_DECODER_END_INPUT_SPACE + 8);
+            (uint8 *) malloc(MaxCompSpaceNeeded + BINK_UE_DECODER_END_INPUT_SPACE + 8);
 
     const uint32 DecodeSize =
             GetMaxFrameSizeSamples() * sizeof(int16) * NumChannels;
@@ -437,6 +437,7 @@ int Decode(BinkAudioDecoder *&Decoder, const uint8 *CompressedData,
 
                 // This means that our block check above succeeded and we still failed
                 // - corrupted data!
+                free(StackBlockBuffer);
                 return 0;
             }
 
@@ -458,6 +459,7 @@ int Decode(BinkAudioDecoder *&Decoder, const uint8 *CompressedData,
 
                 // This means that our block check above succeeded and we still failed
                 // - corrupted data!
+                free(StackBlockBuffer);
                 return 0;
             }
 
@@ -484,6 +486,7 @@ int Decode(BinkAudioDecoder *&Decoder, const uint8 *CompressedData,
                 if (DecodedBytes == 0) {
                     // This means that our block check above succeeded and we still
                     // failed - corrupted data!
+                    free(StackBlockBuffer);
                     return 0;
                 }
 
@@ -542,6 +545,7 @@ int Decode(BinkAudioDecoder *&Decoder, const uint8 *CompressedData,
         // Fall through to the next loop to copy the decoded pcm data out of the
         // reservoir.
     } // while need output pcm data
+    free(StackBlockBuffer);
 
     // We get here if we filled the output buffer or not.
     // FDecodeResult Result;
@@ -719,7 +723,7 @@ int main(int argc, char **argv) {
 
     uint32_t NumChannels = info.NumChannels;
     uint32_t SampleRate = info.SampleRate;
-    uint16_t MaxCompSpaceNeeded = info.SampleDataSize;
+    uint32_t MaxCompSpaceNeeded = info.SampleDataSize;
     uint8_t *OutPCMData = (uint8_t *) malloc(info.SampleDataSize);
     int32_t OutputPCMDataSize = info.SampleDataSize;
     int32_t DecodedBytes =
